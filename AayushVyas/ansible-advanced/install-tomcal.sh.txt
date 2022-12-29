@@ -1,0 +1,45 @@
+sudo -i
+
+# adding a new user
+user add -m -d /opt/tomcat -U -s /bin/false tomcat
+
+# update the system
+apt-get update
+
+# install java
+apt install default-jdk
+
+# verify java is installed
+java -version
+
+cd /opt/tomcat
+wget https://dlcdn.apache.org/tomcat/tomcat-10/v10.0.20/bin/apache-tomcat-10.0.20.tar.gz
+
+sudo tar xzvf apache-tomcat-10*tar.gz -C /opt/tomcat --strip-components=1
+
+sudo chown -R tomcat:tomcat /opt/tomcat/
+sudo chmod -R u+x /opt/tomcat/bin
+
+# edit this file
+sudo nano ./conf/tomcat-users.xml
+
+# edit context.xml
+sudo nano ./webapps/manager/META-INF/context.xml
+
+# edit host-manager context
+sudo nano ./webapps/host-manager/META-INF/context.xml
+
+# create a symtemd unit file for apache tomcat
+sudo nano /etc/systemd/system/tomcat.service
+
+# reload
+sudo systemctl daemon-reload
+
+# start service
+sudo systemctl start tomcat
+
+# enable on system boot
+sudo systemctl enable tomcat
+
+
+
