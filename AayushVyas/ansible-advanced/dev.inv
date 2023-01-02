@@ -1,0 +1,4 @@
+[tomcat]
+client1 ansible_host=172.174.112.226
+
+

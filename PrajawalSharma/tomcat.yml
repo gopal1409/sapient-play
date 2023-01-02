@@ -1,0 +1,104 @@
+---
+- name: Download Tomcat from tomcat.apache.org
+  hosts: all
+  vars:
+    download_url: https://dlcdn.apache.org/tomcat/tomcat-10/v10.0.27/bin/apache-tomcat-10.0.27.tar.gz
+  tasks:
+   - name: Download Default JDK
+     become: yes
+     apt:
+      name: default-jdk
+      update_cache: yes
+      state: present
+
+   - name: validate if Java is availble
+     shell:
+      java -version
+
+   - name: Create the group
+     become: yes
+     group:
+      name: tomcat
+      state: present
+
+   - name: Create the user
+     become: yes
+     user:
+        name: tomcat
+        state: present
+
+   - name: Create a Directory /opt/tomcat
+     become: yes
+     file:
+       path: /opt/tomcat
+       state: directory
+       mode: 0755
+       owner: tomcat
+       group: tomcat
+
+   - name: Download Tomcat using unarchive
+     become: yes
+     unarchive:
+       src: "{{download_url}}"
+       dest: /opt/tomcat
+       mode: 0755
+       remote_src: yes
+
+   - name: Change ownership of tomcat directory
+     file:
+      path: /opt/tomcat
+      owner: tomcat
+      group: tomcat
+      mode: "u+rwx,g+rx,o=rx"
+      recurse: yes
+      state: directory
+
+   - name: Creating a service file
+     become: yes
+     copy:
+      content: |-
+        [Unit]
+        Description=Tomcat
+        After=network.target
+
+        [Service]
+        Type=forking
+
+        User=tomcat
+        Group=tomcat
+
+        Environment="JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-amd64"
+        Environment="JAVA_OPTS=-Djava.security.egd=file:///dev/urandom"
+        Environment="CATALINA_BASE=/opt/tomcat"
+        Environment="CATALINA_HOME=/opt/tomcat"
+        Environment="CATALINA_PID=/opt/tomcat/temp/tomcat.pid"
+        Environment="CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC"
+
+        ExecStart=/opt/tomcat/bin/startup.sh
+        ExecStop=/opt/tomcat/bin/shutdown.sh
+
+        RestartSec=10
+        Restart=always
+
+        [Install]
+        WantedBy=multi-user.target
+      dest: /etc/systemd/system/tomcat.service
+      mode: 0755
+
+   - name: Reload the SystemD to re-read configurations
+     become: yes
+     systemd:
+        daemon-reload: true
+
+   - name: Enable the tomcat service and start
+     become: yes
+     systemd:
+        name: tomcat
+        enabled: true
+        state: started
+
+   - name: Allow port 8080
+     ufw:
+       rule: allow
+       port: '80'
+       proto: tcp
