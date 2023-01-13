@@ -1,0 +1,22 @@
+pipeline {
+    agent any 
+    
+    stages {
+        stage('Poll') {
+            steps {
+                git branch: 'main', credentialsId: 'jenkins-master', url: 'git@github.com:aayvyas/ansible-docker.git'
+            }
+        }
+        stage('Ansible install docker'){
+            steps{
+                ansiblePlaybook credentialsId: 'root-host-verification-false', disableHostKeyChecking: true, inventory: 'dev.inv', playbook: 'install-docker.yml'
+            }
+        }
+        stage('Ansible deploy nexus image'){
+            steps{
+                ansiblePlaybook credentialsId: 'root-host-verification-false', disableHostKeyChecking: true, inventory: 'dev.inv', playbook: 'deploy-image.yml'
+            }
+        }
+    
+    }
+}
