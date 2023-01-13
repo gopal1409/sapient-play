@@ -1,0 +1,16 @@
+---
+- hosts: ubuntu
+  become: true
+  tasks:
+    - name: pull an image
+      community.docker.docker_image:
+        name: aayvyas/node-crud:latest
+        source: pull
+    - name: start the container
+      community.docker.docker_container:
+        name: node-crud
+        image: aayvyas/node-crud:latest
+        state: present
+        recreate: yes
+        exposed_ports:
+          - 3001

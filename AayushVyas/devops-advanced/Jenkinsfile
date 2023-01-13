@@ -1,0 +1,69 @@
+pipeline {
+    agent any
+    
+    environment {
+        dockerImage = ''
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                
+                git branch: 'main', credentialsId: 'root-host-verification-false', url: 'git@github.com:aayvyas/node-crud.git'
+
+                sh 'npm install'
+            }
+        }
+        stage('test') {
+
+            steps {
+                sh 'npm run test'
+            }
+        }
+        stage('Sonar'){
+            steps {
+                
+                sh '''
+                sudo npm install -g sonarqube-scanner
+                sonar-scanner \
+                -Dsonar.projectKey=node-crud \
+                -Dsonar.sources=. \
+                -Dsonar.host.url=http://20.115.68.227:9000 \
+                -Dsonar.login=sqp_3be65cefd20c82446dc8e8ebe5ff92e726967bce'''
+            
+                
+            }
+        }
+        stage('docker build') {
+            
+            steps{
+                script{
+                    dockerImage = docker.build("aayvyas/node-crud:latest")
+                }
+            }
+            
+        
+
+        }
+        stage('docker login and push') {
+            
+            steps {
+                script {
+                   withDockerRegistry(credentialsId: '13b24bea-9c4e-42fb-bf81-a0ca208478fc', url: "") {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }
+        stage('Ansible install docker'){
+            steps{
+                ansiblePlaybook credentialsId: 'root-host-verification-false', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/install-docker.yml'
+            }
+        }
+        stage('Ansible deploy  image'){
+            steps{
+                ansiblePlaybook credentialsId: 'root-host-verification-false', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/deploy-image.yml'
+            }
+        }
+    }
+}

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-backend-deployment
+  # namespace: development
+  labels:
+    app: node-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: node-backend
+
+  template:
+    metadata:
+      name: node-backend
+      # namespace: development
+      labels:
+        app: node-backend
+    spec:
+      containers:
+        - name: node-backend
+          image: aayvyas/node-backend:latest
+          ports:
+            - containerPort: 3001
+
+          # securityContext
+          securityContext:
+            allowPrivilegeEscalation: false
+
+          # livenessProbe
+          livenessProbe:
+            exec:
+              command:
+                - node
+                - -v
+            initialDelaySeconds: 10
+            periodSeconds: 30
+
+          # readinessProbe
+          readinessProbe:
+            httpGet:
+              path: "/"
+              port: 3001
+            initialDelaySeconds: 100
+            periodSeconds: 500
