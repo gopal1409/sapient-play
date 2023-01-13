@@ -1,0 +1,13 @@
+---
+- name: Install the war file
+  hosts: all
+  become: false
+  vars:
+    myurl: "https://raw.githubusercontent.com/aeimer/java-example-helloworld-war/master/dist/helloworld.war"
+    mydest: "/usr/share/tomcat/webapps"
+  tasks:
+
+    - name: download file
+      ansible.builtin.get_url:
+        url: "{{ myurl }}"
+        dest: "{{ mydest }}"
