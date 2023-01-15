@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+    environment {
+        dockerImage = ''
+    }
+    stages {
+        stage('Poll Code Repository') {
+            steps {
+                git credentialsId: 'git', url: 'git@github.com:asatyam78/node-demo.git'
+            }
+        }
+        stage('npm install') {
+            steps {
+                sh 'npm install'
+            }
+        }
+        stage('test') {
+            steps {
+                sh 'npm run test'
+            }
+        }
+        stage('Sonarqube'){
+            steps {
+                
+                sh '''
+                sudo npm install -g sonarqube-scanner
+                sonar-scanner \
+                    -Dsonar.projectKey=node-demo \
+                    -Dsonar.sources=. \
+                    -Dsonar.host.url=http://20.172.204.197:9000 \
+                '''
+            }
+        }
+        stage('docker build') {
+            steps{
+                script{
+                    dockerImage = docker.build("asatyam78/node-demo:latest")
+                }
+            }
+        }
+        stage('docker push') {
+            
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker-hub', url: "") {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }
+        stage('Ansible install docker'){
+            steps{
+                ansiblePlaybook credentialsId: 'git', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/docker.yml'
+            }
+        }
+        stage('Ansible deploy  image'){
+            steps{
+                ansiblePlaybook credentialsId: 'git', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/deploy-image.yml', vaultCredentialsId: 'ansible-vault'
+            }
+        }
+    }
+}
