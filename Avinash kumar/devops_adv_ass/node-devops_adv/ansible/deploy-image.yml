@@ -1,0 +1,26 @@
+---
+- name: Deploy Docker Image
+  hosts: all
+  become: true
+  tasks:
+    - name: Log into private registry and force re-authorization
+      docker_login:
+        username: admin
+        password: nexus
+        reauthorize: yes
+    - name: Running Docker Conatiner
+      docker_container:
+        name: chatapp
+        image: avi207/devops-node:latest        
+        state: started
+        pull: 'true'
+        ports:
+        - "8081:8080"
+    - name: Connect to app server on port 8080 and check status 200 - Try 5 times
+      tags: test
+      uri:
+        url: http://localhost:8080
+      register: result
+      until: "result.status == 200"
+      retries: 5
+      delay: 10
