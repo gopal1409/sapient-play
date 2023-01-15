@@ -1,0 +1,53 @@
+---
+- hosts: all
+  become: true
+
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        upgrade: yes
+        update_cache: yes
+     
+    - name: Install required system packages
+      apt:
+        pkg:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - python3-pip
+          - virtualenv
+          - python3-setuptools
+        state: latest
+        update_cache: true
+
+    - name: ensure repository key is installed
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: ensure docker registry is available
+      apt_repository: 
+        repo: 'deb https://download.docker.com/linux/ubuntu bionic stable' 
+        state: present
+
+    - name: ensure docker and dependencies are installed
+      apt: 
+        name: docker-ce 
+        update_cache: yes
+    - name: install docker py
+      pip:
+              name: docker
+    - name: ensure docker can use insecure registries in 10.0.0.0/24
+      copy:
+        content: |-
+          {
+            "insecure-registries" : ["52.147.206.95:8085"]
+          }
+        dest: /etc/docker/daemon.json
+    - name: restart service docker
+      service: 
+        name: docker
+        state: restarted
+
+    
