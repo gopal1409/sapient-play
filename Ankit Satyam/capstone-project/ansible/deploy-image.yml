@@ -1,0 +1,31 @@
+---
+- name: Deploy Docker Image
+  hosts: client
+  become: true
+  vars_files:
+  - nexus-cred.yml
+  tasks:
+    - name: Log into private registry and force re-authorization
+      docker_login:
+        registry: 172.173.154.5:8085
+        username: "{{ username }}"
+        password: "{{ password }}"
+        reauthorize: yes
+    
+    - name: Run Docker Conatiner
+      docker_container:        
+        name: spring-chat-app
+        image: 172.173.154.5:8085/spring-chat-app        
+        state: started
+        pull: yes
+        ports:
+        - "8082:8082"
+        
+    - name: Connect to docker container on port 8080 and check status 200 (Try 5 times)
+      tags: test
+      uri:
+        url: http://localhost:8080
+      register: result
+      until: "result.status == 200"
+      retries: 5
+      delay: 5
