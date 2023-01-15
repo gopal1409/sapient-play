@@ -21,16 +21,13 @@ pipeline {
         }
         stage('Sonar Analysis'){
             steps {      
-                //withSonarQubeEnv('sonarqube-server'){
+                withSonarQubeEnv('sonarqube-server'){
                     sh '''                    
                     sonar-scanner \
                         -Dsonar.projectKey=container-node-project \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=http://20.185.62.113:9000 \
-                        -Dsonar.login=sqp_d9637f8158325f5abfa98ab591c9b98fd620ce27                     
+                        -Dsonar.sources=.                        
                     '''       
-                //}          
-                                     
+                }                                               
             }
         }
         stage('Docker Build') {            
