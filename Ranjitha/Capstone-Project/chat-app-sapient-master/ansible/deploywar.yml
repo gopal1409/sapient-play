@@ -1,0 +1,26 @@
+---
+
+- name: Install the war file
+
+  hosts: all
+
+  become: false
+
+  vars:
+
+    myurl: "http://52.147.200.247:8081/#browse/browse:maven-snapshots:websocket-demo/websocket-demo/0.0.1-SNAPSHOT/websocket-demo-0.0.1-20230113.064541-4.war"
+    
+    mydest: "/usr/share/tomcat/webapps"
+
+  tasks:
+
+
+
+    - name: download file
+
+      ansible.builtin.get_url:
+
+        url: "{{ myurl }}"
+
+        dest: "{{ mydest }}"
+

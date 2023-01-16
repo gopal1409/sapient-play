@@ -1,0 +1,79 @@
+pipeline {
+    agent any
+    stages {
+        stage('poll scm') {
+            steps {
+                git credentialsId: 'git-token', url: 'git@github.com:sairanjitha2906/sapient-chatapp.git'
+            }
+        }
+        stage('mvn build') {
+             when {
+               expression {stage == 'build'}
+             }
+            steps {
+                sh 'mvn -B -DskipTest clean package'
+            }
+        }
+        stage('mvn test') {
+            when {
+               expression {stage == 'unittest'}
+             }
+
+            steps {
+                sh 'mvn test'
+                junit 'target/surefire-reports/*.xml'
+            }
+        }
+        stage('checkstyle') {
+        //     when {
+        //   expression {stage == 'checkstyle'}
+    //   }
+
+            steps {
+                sh 'mvn checkstyle:checkstyle'
+                recordIssues(tools: [checkStyle(pattern: '**/checkstyle-result.xml')])
+                
+            }
+        }
+         stage('code coverage') {
+    //          when {
+    //       expression {stage == 'codecoverage'}
+    //   }
+
+            steps {
+                jacoco()
+                
+            }
+        }
+         stage('sonar') {
+    //           when {
+    //       expression {stage == 'sonar'}
+    //   }
+            steps {
+                sh 'mvn clean verify sonar:sonar \
+  -Dsonar.projectKey=chat-app-sapient \
+  -Dsonar.host.url=http://20.169.214.66:9000 \
+  -Dsonar.login=sqp_ed2d72b0b1b4ed060e13e3c744cf7c9fdab92362'
+                // sh 'mvn clean verify sonar:sonar \
+                //     -Dsonar.projectKey=sapient-chatapp \
+                //     -Dsonar.host.url=http://20.169.214.66:9000 \
+                //     -Dsonar.login=sqp_972158edc1e270b425ac74b2869cc3bb79c4c49b'
+                
+            }
+        }
+        stage('nexus') {
+            steps {
+            script {
+                 pom = readMavenPom file: "pom.xml";
+                filesByGlob = findFiles(glob: "target/*.${pom.packaging}");
+                    echo "${filesByGlob[0].name} ${filesByGlob[0].path} ${filesByGlob[0].directory} ${filesByGlob[0].length} ${filesByGlob[0].lastModified}"
+                    artifactPath = filesByGlob[0].path;
+            }
+            
+               // nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging]], credentialsId: 'nexus', groupId: pom.artifactId, nexusUrl: '44.192.78.16:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-snapshots', version: pom.version
+           
+               nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging, type: 'war']], credentialsId: 'nexus-cred', groupId: pom.artifactId, nexusUrl: '52.147.200.247:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-snapshots', version: pom.version
+            }
+        }
+    }
+    }

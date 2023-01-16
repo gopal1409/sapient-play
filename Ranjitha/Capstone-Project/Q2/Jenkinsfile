@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+     environment {
+        dockerImage = ''
+    }
+    stages {
+        stage('pull the code') {
+            steps {
+               git credentialsId: 'git-token', url: 'git@github.com:sairanjitha2906/chat-app-sapient.git'
+            }
+        }
+        stage('docker build') {
+            steps {
+                script {
+              sh 'mvn compile jib:dockerBuild'
+                }
+            }
+        }
+        stage('docker push') {
+            steps {
+                script {
+                    // This step should not normally be used in your script. Consult the inline help for details.
+                      withDockerRegistry(credentialsId: 'nexus-cred', url: 'http://52.147.200.247:8085') {
+                         // some block
+                        sh 'mvn compile jib:build -Djib.allowInsecureRegistries=true -DsendCredentialsOverHttp'
+
+
+                      }
+                  
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,40 @@
+---
+
+- hosts: all
+  become: true
+  vars:
+    username: admin
+    password: admin@123
+  tasks:
+    - name: Install required system packages
+      apt:
+        pkg:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - python3-pip
+          - virtualenv
+          - python3-setuptools
+        state: latest
+        update_cache: true
+    - name: Install lxml
+      pip:
+        name: lxml
+            
+    - name: Download a WAR File to the Tomcat 
+      maven_artifact:
+            group_id: websocket-demo
+            artifact_id: websocket-demo
+            version: 0.0.1-SNAPSHOT
+            extension: war
+            repository_url: 'http://52.147.200.247:8081/repository/maven-snapshots'
+            username: "{{ username }}"
+            password: "{{ password }}"
+            dest: /opt/tomcat/webapps/websocket-demo-0.0.1-SNAPSHOT.war
+            mode: "0644"
+    - name: Restart the Tomcat
+      systemd:
+        name: tomcat
+        enabled: yes
+        state: restarted

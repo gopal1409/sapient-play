@@ -20,5 +20,5 @@ variable "bastion_service_address_prefixes" {
 
 variable "source_address_prefix" {
   type    = string
-  default = "20.115.19.92/32"
+  default = "20.168.239.36/32"
 }
