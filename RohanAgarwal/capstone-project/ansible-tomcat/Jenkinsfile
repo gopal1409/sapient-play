@@ -1,0 +1,22 @@
+pipeline {
+    agent any
+    
+    stages{
+        stage("git poll") {
+            steps{
+                git branch: 'main', credentialsId: 'jenkins-master', url: 'git@github.com:aayvyas/ansible-tomcat.git'
+            }
+            
+        }
+        stage('Ansible install and start tomcat server'){
+            steps{
+                ansiblePlaybook credentialsId: 'root-host-verification-false', disableHostKeyChecking: true, inventory: 'dev.inv', playbook: 'tomcat.yml'
+            }
+        }
+        stage('Ansible deploy the jar artifact from nexus'){
+            steps{
+                ansiblePlaybook credentialsId: 'root-host-verification-false', disableHostKeyChecking: true, inventory: 'dev.inv', playbook: 'deploy.yml'
+            }
+        }
+    }
+}

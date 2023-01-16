@@ -1,0 +1,22 @@
+---
+- hosts: ubuntu
+  become: true
+  tasks:
+    - name: Log into private registry and force re-authorization
+      community.docker.docker_login:
+        registry_url: 4.227.129.1:8085
+        username: admin
+        password: admin
+        reauthorize: true
+    - name: pull an image
+      community.docker.docker_image:
+        name: 4.227.129.1:8085/chat-app/spring-chat
+        source: pull
+    - name: start the container
+      community.docker.docker_container:
+        name: spring-chat
+        image: 4.227.129.1:8085/chat-app/spring-chat
+        state: present
+        recreate: yes
+        exposed_ports:
+          - 8080
