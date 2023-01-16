@@ -6,11 +6,11 @@ resource "null_resource" "null_copy_ssh_key_to_vm" {
     type        = "ssh"
     host        = azurerm_linux_virtual_machine.webserver.public_ip_address
     user        = azurerm_linux_virtual_machine.webserver.admin_username
-    private_key = file(".ssh/id_rsa")
+    private_key = file("~/.ssh/id_rsa")
   }
   
   provisioner "file" {
-    source      = ".ssh/id_rsa"
+    source      = "~/.ssh/id_rsa"
     destination = "/tmp/id_rsa"
   }
   provisioner "file" {
