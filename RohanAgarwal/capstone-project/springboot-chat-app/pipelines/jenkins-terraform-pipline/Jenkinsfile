@@ -1,0 +1,126 @@
+pipeline {
+    agent any
+    tools {
+       terraform 'terraform'
+    }
+    environment {
+        RESOURCE_GROUP = 'rg-default'
+        HOST_VM = 'web-linuxvm'
+        USERNAME = 'azureuser'
+    }
+    stages {
+        stage('Poll Code Repository') {
+            steps {
+                git credentialsId: 'git-key', url: 'git@github.com:arnabcs10/springboot-chat-app.git'
+            }
+        }
+        stage('Terraform Init') {
+            when {
+                expression{action == "apply"}
+            }
+            steps{
+               script {
+                    dir('infrastructure/') {
+                        sh 'terraform init'
+                    }
+                }
+            }            
+        }
+        stage('Terraform Syntax Check') {
+            when {
+                expression{action == "apply"}
+            }            
+            steps{
+               script {
+                    dir('infrastructure/') {
+                        sh 'terraform validate'
+                    }
+                }
+            }
+        }
+        
+        stage('Terraform Plan') {
+            when {
+                expression{action == "apply"}
+            }
+            steps{
+               script {
+                    dir('infrastructure/') {
+                        sh 'terraform plan'
+                    }
+                }
+            }            
+        }
+        stage('Terraform Apply') {
+            when {
+                expression{action == "apply"}
+            }
+            steps{
+               script {
+                    dir('infrastructure/') {
+                        sh 'terraform apply --auto-approve'
+                    }
+                }
+            }              
+        }
+        stage('SSH Connection to VM') {
+            when {
+                expression{action == "apply"}
+            }
+            steps{
+                sh'''
+                PUBLIC_IP=$(az vm show -d -g $RESOURCE_GROUP -n $HOST_VM --query publicIps -o tsv)                
+                ssh -tt -o "StrictHostKeyChecking no" $USERNAME@$PUBLIC_IP <<'EOT'
+                echo "They are executed by: $( whoami )"
+                exit              
+                '''
+            }
+        }
+        stage("Install Istio"){
+
+            when {
+                expression{action == "apply"}
+            }
+            steps{
+                sh ''' 
+                PUBLIC_IP=$(az vm show -d -g $RESOURCE_GROUP -n $HOST_VM --query publicIps -o tsv)                   
+                ssh -tt -o "StrictHostKeyChecking no" $USERNAME@$PUBLIC_IP <<'EOT'               
+                curl -L https://istio.io/downloadIstio | sh -
+                cd istio-1.16.1
+                export PATH=$PWD/bin:$PATH
+                sudo istioctl install --set profile=demo -y
+                sudo kubectl label namespace default istio-injection=enabled
+                exit
+                '''
+            }
+        }
+        stage('Installing Helm Chart') {
+            when {
+                expression{action == "apply"}
+            }
+            steps{
+                sh'''
+                PUBLIC_IP=$(az vm show -d -g $RESOURCE_GROUP -n $HOST_VM --query publicIps -o tsv)                
+                ssh -tt -o "StrictHostKeyChecking no" $USERNAME@$PUBLIC_IP <<'EOT'
+                sudo helm repo add bitnami https://charts.bitnami.com/bitnami
+                sudo helm install my-nginx-release bitnami/nginx
+                sudo kubectl get pod -o jsonpath='{.items[0].metadata.name}'
+                exit
+                '''
+            }
+        }
+
+        stage("Terraform destroy"){
+            when {
+                expression{action == "destroy"}
+            }
+            steps{
+                sh 'terraform destroy -auto-approve'
+            }
+        }
+
+    }
+
+    
+}
+// sudo kubectl exec "$(sudo kubectl get pod -o jsonpath='{.items[0].metadata.name}')" -- curl -sS localhost:30303/ 
