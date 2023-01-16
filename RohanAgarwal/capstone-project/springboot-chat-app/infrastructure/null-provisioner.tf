@@ -10,7 +10,7 @@ resource "null_resource" "null_copy_ssh_key_to_vm" {
   }
   #file provisioiner which will upload my key
   provisioner "file" {
-    source      = "~/.ssh/id_rsa"
+    source      = "/var/lib/jenkins/.ssh/id_rsa"
     destination = "/tmp/id_rsa"
   }
   provisioner "file" {
