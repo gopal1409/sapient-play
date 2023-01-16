@@ -13,13 +13,14 @@ pipeline {
         }
         stage('Sonar'){
                steps{
-                sh ''' 
-                sonar-scanner \
-  -Dsonar.projectKey=NodeJs-app \
-  -Dsonar.sources=. \
-  -Dsonar.host.url=http://194.195.113.53:9000 \
-  -Dsonar.login=sqp_63016564e6637699899e22ad5c33afd4e1b3602c
-  '''
+                   sh 'echo "Hello"'
+//                 sh ''' 
+//                  sonar-scanner \
+//    -Dsonar.projectKey=NodeJs-app \
+//    -Dsonar.sources=. \
+//    -Dsonar.host.url=http://194.195.113.53:9000 \
+//    -Dsonar.login=sqp_63016564e6637699899e22ad5c33afd4e1b3602c
+//   '''
             }
        }
         stage('Dcoker Build') {
