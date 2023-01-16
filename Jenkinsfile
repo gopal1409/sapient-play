@@ -4,11 +4,6 @@ pipeline {
         dockerImage = ''
     }
     stages {
-        stage('pull the code') {
-            steps {
-               git credentialsId: 'git-key', url: 'git@github.com:shubhamghavas/NodeJS-App.git'
-            }
-        }
         stage('Build and Install') {
 
             steps {
