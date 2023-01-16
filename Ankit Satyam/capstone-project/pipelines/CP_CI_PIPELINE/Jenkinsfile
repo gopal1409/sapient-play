@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+    stages {
+        stage('poll scm') {
+            steps {
+                git credentialsId: 'git', url: 'git@github.com:asatyam78/spring-boot-chat-app.git'
+            }
+        }
+        stage('mvn build') {
+            steps {
+                sh 'mvn -B -DskipTest clean package'
+            }
+        }
+        stage('mvn test') {
+            steps {
+                sh 'mvn test'
+                junit 'target/surefire-reports/*.xml'
+            }
+        }
+        stage('checkstyle') {
+            steps {
+                sh 'mvn checkstyle:checkstyle'
+                recordIssues(tools: [checkStyle(pattern: '**/checkstyle-result.xml')])
+            }
+        }
+        stage('code coverage') {
+            steps {
+                jacoco()
+            }
+        }
+        stage('Sonarqube Analysis'){            
+            steps {
+                withSonarQubeEnv('sonarqube') {
+                    sh 'mvn clean verify sonar:sonar -Dsonar.projectKey=springboot-chat-app'
+                }
+            }
+        }
+        stage("SonarQube Quality Check"){
+            steps{
+                timeout(time:1, unit:'MINUTES'){
+                    waitForQualityGate abortPipeline: true, credentialsId: 'sonar'
+                }
+            }
+        }
+        stage('nexus') {
+            steps {
+                script {
+                    pom = readMavenPom file: "pom.xml";
+                    filesByGlob = findFiles(glob: "target/*.${pom.packaging}");
+                        echo "${filesByGlob[0].name} ${filesByGlob[0].path} ${filesByGlob[0].directory} ${filesByGlob[0].length} ${filesByGlob[0].lastModified}"
+                        artifactPath = filesByGlob[0].path;
+                }
+                nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging, type: 'war']], credentialsId: 'nexusCred', groupId: pom.artifactId, nexusUrl: '172.173.154.5:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-snapshots', version: pom.version
+            }
+        }
+        stage('docker build') {
+            steps {
+                script {
+                        withDockerRegistry(credentialsId: 'nexusCred', url: 'http://172.173.154.5:8085') {
+                        sh 'mvn compile jib:build -Djib.allowInsecureRegistries=true -DsendCredentialsOverHttp'
+                       }
+                }
+            }
+        }
+    }
+}

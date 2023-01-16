@@ -1,0 +1,20 @@
+pipeline {
+    agent any
+    stages {
+        stage('git integration') {
+            steps {
+                git credentialsId: 'git', url: 'git@github.com:asatyam78/spring-boot-chat-app.git'
+            }
+        }
+        stage ('docker install using ansible'){
+            steps {
+                ansiblePlaybook credentialsId: 'git', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/docker.yml'
+            }
+        }
+        stage ('deploy private image using ansible'){
+            steps {
+                ansiblePlaybook credentialsId: 'git', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/deploy-image.yml', vaultCredentialsId: 'ansible-vault'
+            }
+        }
+    }
+}

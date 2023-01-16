@@ -1,0 +1,20 @@
+pipeline {
+    agent any
+    stages {
+        stage('git integration') {
+            steps {
+                git credentialsId: 'git', url: 'git@github.com:asatyam78/spring-boot-chat-app.git'
+            }
+        }
+        stage ('tomcat install using ansible'){
+            steps {
+                ansiblePlaybook credentialsId: 'git', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/tomcat.yml'
+            }
+        }
+        stage ('deploy war file'){
+            steps {
+                ansiblePlaybook credentialsId: 'git', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/deploy-war.yml', vaultCredentialsId: 'ansible-vault'
+            }
+        }
+    }
+}

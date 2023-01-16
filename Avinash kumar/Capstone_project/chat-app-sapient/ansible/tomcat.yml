@@ -1,0 +1,41 @@
+---
+- name: Deploy war file into tomcat server
+  hosts: all
+  become: yes
+  vars_files:
+    - secret.yml
+  tasks:
+   - name: Update and upgrade packages
+     apt:
+      upgrade: yes
+      update_cache: yes
+   - name: Install required system packages
+     apt:
+      pkg:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+        - python3-pip
+        - virtualenv
+        - python3-setuptools
+      state: latest
+      update_cache: true
+   - name: Install lxml
+     pip:
+      name: lxml
+   - name: Download artifacts from nexus repo 
+     maven_artifact:
+      group_id: websocket-demo
+      artifact_id: websocket-demo
+      version: 0.0.1-SNAPSHOT
+      repository_url: 'http://52.147.206.95:8081/repository/maven-snapshots'
+      username: "{{ username }}"
+      password: "{{ password }}"
+      dest: /opt/tomcat/webapps/web-app.war
+      mode: "0644"
+   - name: Restart the Tomcat
+     systemd:
+      name: tomcat
+      enabled: yes
+      state: restarted

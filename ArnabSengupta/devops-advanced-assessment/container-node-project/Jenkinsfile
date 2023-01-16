@@ -1,0 +1,60 @@
+pipeline {
+    agent any    
+    environment {
+        dockerImage = ''
+    }
+    stages {
+        stage('Git Checkout') {
+            steps {                
+                git credentialsId: 'git-key', url: 'git@github.com:arnabcs10/container-node-project.git'                
+            }
+        }
+        stage('Build') {
+            steps {                
+                sh 'npm install'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'npm run test'
+            }
+        }
+        stage('Sonar Analysis'){
+            steps {      
+                withSonarQubeEnv('sonarqube-server'){
+                    sh '''                    
+                    sonar-scanner \
+                        -Dsonar.projectKey=container-node-project \
+                        -Dsonar.sources=.                        
+                    '''       
+                }                                               
+            }
+        }
+        stage('Docker Build') {            
+            steps{
+                script{
+                    dockerImage = docker.build("arnabcs10/container-node-project:latest")
+                }
+            }                
+        }
+        stage('Docker Push') {            
+            steps {
+                script {
+                   withDockerRegistry(credentialsId: 'docker-cred', url: "") {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }
+        stage('Ansible: Install Docker'){
+            steps {
+                ansiblePlaybook colorized: true, credentialsId: 'git-key', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/docker-install.yaml'
+            }
+        }
+        stage('Ansible: Run Docker Image'){
+            steps {
+                ansiblePlaybook colorized: true, credentialsId: 'git-key', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/deploy-docker-image.yaml', vaultCredentialsId: 'vault-pass'
+            }
+        }
+    }
+}

@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+    environment {
+        dockerImage = ''
+    }
+    stages {
+        stage('pull the code') {
+            steps {
+               git branch: 'main', credentialsId: '92f27e9d-788a-4836-a645-3642abe33d1c', url: 'git@github.com:PrajawalSharma/jenkins.git'
+            }
+        }
+        stage('docker build') {
+            steps {
+                script {
+               sh 'mvn compile jib:dockerBuild'
+                }
+            }
+        }
+        stage('docker push'){
+            steps{
+                script{
+            withDockerRegistry(credentialsId: 'nexus', url: 'http://20.228.238.91:8085') {
+                  sh 'mvn compile jib:build -Djib.allowInsecureRegistries=true -DsendCredentialsOverHttp'
+        }
+                }
+            }
+        }
+    }
+}

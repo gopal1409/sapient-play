@@ -1,0 +1,100 @@
+pipeline {
+    agent any
+    
+    tools {
+        
+        maven "mvn"
+    }
+    
+    
+    environment {
+        dockerImage = ''
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                
+                git credentialsId: 'root-host-verification-false', url: 'git@github.com:aayvyas/spring-chat-aayvyas.git'
+
+                sh "mvn -DskipTests=true -Dmaven.test.failure.ignore=true clean package "
+            }
+        }
+    
+    
+        stage('mvn test') {
+
+            steps {
+                sh 'mvn test'
+                junit 'target/surefire-reports/*.xml'
+            }
+        }
+        stage('checkstyle') {
+
+
+            steps {
+                sh 'mvn checkstyle:checkstyle'
+                recordIssues(tools: [checkStyle(pattern: '**/checkstyle-result.xml')])
+                
+            }
+        }
+        stage('code coverage') {
+             
+            steps {
+                jacoco()
+                
+            }
+        }
+        stage('Sonar'){
+            steps {
+                
+                sh " mvn clean verify sonar:sonar -DskipTests=true -Dsonar.projectKey=jenkins-pipeline -Dsonar.host.url=http://20.115.68.227:9000 -Dsonar.login=sqp_873ca9c577233193f135e99130dea24a99fd4841"
+                
+            }
+        }
+        stage('nexus') {
+            when{
+                expression {type == "maven-snapshot"}
+            }
+            steps {
+            script {
+                 pom = readMavenPom file: "pom.xml";
+                filesByGlob = findFiles(glob: "target/*.${pom.packaging}");
+                    echo "${filesByGlob[0].name} ${filesByGlob[0].path} ${filesByGlob[0].directory} ${filesByGlob[0].length} ${filesByGlob[0].lastModified}"
+                    artifactPath = filesByGlob[0].path;
+            }
+            
+               // nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging]], credentialsId: 'nexus', groupId: pom.artifactId, nexusUrl: '44.192.78.16:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-snapshots', version: pom.version
+           
+               nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging, type: 'jar']], credentialsId: 'nexus-id', groupId: pom.artifactId, nexusUrl: '4.227.129.1:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-snapshots', version: pom.version
+            }
+        }
+        stage('docker build') {
+            when{
+                expression {type == "docker-image"}
+            }
+            steps {
+                script {
+                   sh 'mvn compile jib:dockerBuild -DskipTests=true -DsendCredentialsOverHttp=true -Dimage=4.227.129.1:8085/chat-app/spring-chat'
+                }
+            }
+        }
+        stage('docker push') {
+            when{
+                expression {type == "docker-image"}
+            }
+            steps {
+                script {
+                    // This step should not normally be used in your script. Consult the inline help for details.
+                       withDockerRegistry(credentialsId: 'nexus-id', url: 'http://4.227.129.1:8085') {
+                         // some block
+                        sh 'mvn compile jib:build -Djib.allowInsecureRegistries=true -DsendCredentialsOverHttp -Dimage=4.227.129.1:8085/chat-app/spring-chat -DskipTests=true -DsendCredentialsOverHttp=true'
+
+
+                       }
+                  
+                }
+            }
+        }
+    }
+}

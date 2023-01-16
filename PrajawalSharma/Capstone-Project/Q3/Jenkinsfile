@@ -1,0 +1,22 @@
+pipeline {
+    agent any
+    stages {
+        stage ('git intgration'){
+            steps {
+             git branch: 'main', credentialsId: '92f27e9d-788a-4836-a645-3642abe33d1c', url: 'git@github.com:PrajawalSharma/jenkins.git'
+            }
+        }
+        
+    stage ('ansible'){
+            steps {
+                ansiblePlaybook credentialsId: 'ansible-0key', disableHostKeyChecking: true, inventory: 'docker-install/inventory', playbook: 'docker-install/docker.yml'
+            }
+        }
+        
+        stage ('dockerer-nexus-repo'){
+            steps {
+                ansiblePlaybook credentialsId: 'ansible-0key', disableHostKeyChecking: true, inventory: 'docker-install/inventory', playbook: 'docker-install/private-repo.yml'
+            }
+        }
+    }
+}

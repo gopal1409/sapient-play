@@ -1,0 +1,4 @@
+.terraform
+terraform.tfstate.backup
+kind_cluster.PNG
+terraform.tfstate

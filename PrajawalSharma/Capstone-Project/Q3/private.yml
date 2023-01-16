@@ -1,0 +1,16 @@
+---
+- name: Login to private Docker registry
+  hosts: all
+  become: true
+  tasks:
+    - name: Log into private registry and force re-authorization
+      docker_login:
+        registry: http://20.228.238.91:8085/
+        username: admin 
+        password: Nexus@123
+        reauthorize: yes
+    
+    - name: pull an image
+      docker_image:
+        name: 20.228.238.91:8085/sapient-chat-app
+        source: pull
