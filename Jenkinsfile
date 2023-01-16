@@ -5,11 +5,10 @@ pipeline {
     }
     stages {
         stage('Build and Install') {
-
             steps {
                 script{
                 sh 'npm install'
-            }
+               }
             }
         }
         stage('Sonar'){
@@ -17,7 +16,8 @@ pipeline {
                 withSonarQubeEnv('sonarqube-9') {
                 sh 'sonar-scanner -Dsonar.projectKey=NodeJs-app -Dsonar.sources=.'
               }
-        }
+         }
+       }
         stage('Dcoker Build') {
             steps {
                 sh 'docker build -t shubhamghavas/nodejs:latest .'
