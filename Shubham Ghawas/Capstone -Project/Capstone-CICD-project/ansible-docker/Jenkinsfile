@@ -1,0 +1,21 @@
+pipeline {
+    agent any
+    stages {
+//         stage ('git intgration'){
+//             steps {
+//          git credentialsId: 'git-key', url: 'git@github.com:shubhamghavas/chat-app-sapient.git'
+  
+//             }
+//         }
+        stage ('install docker'){
+            steps{
+                ansiblePlaybook credentialsId: 'git-key', disableHostKeyChecking: true, inventory: 'ansible-docker/dev.inv', playbook: 'ansible-docker/docker.yml'
+            }
+        }
+        stage('Deploy Image '){
+            steps{
+                ansiblePlaybook credentialsId: 'git-key', disableHostKeyChecking: true, inventory: 'ansible-docker/dev.inv', playbook: 'ansible-docker/delpoyimage.yml'
+            }
+        }
+    }
+}

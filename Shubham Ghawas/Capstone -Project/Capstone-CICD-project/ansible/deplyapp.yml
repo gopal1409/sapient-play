@@ -1,0 +1,30 @@
+---
+- hosts: all
+  vars:
+  - warName: app.war
+  - warRemotePath: /home/tomcat
+
+  tasks:
+  - name: Download WAR to server
+    command: wget https://raw.githubusercontent.com/aeimer/java-example-helloworld-war/master/dist/helloworld.war -O {{ warRemotePath }}/{{ warName }}
+    
+  - name: Unzip WAR file
+    copy: 
+        src: /home/tomcat/app.war
+        dest: /usr/share/tomcat/webapps
+        remote_src: yes 
+        mode: 0644 
+        owner: root 
+        group: root 
+    notify:
+        - Restart tomcat
+   
+  - name: Delete remote war file
+    file: path={{ warRemotePath }}/{{ warName }} state=absent
+    
+  - name: wait for tomcat to start
+    wait_for: port=8080 timeout=60
+    
+  handlers:
+    - name: Restart tomcat
+      service: name=tomcat state=restarted

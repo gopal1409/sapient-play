@@ -1,0 +1,21 @@
+pipeline {
+    agent any
+    stages {
+//         stage ('git intgration'){
+//             steps {
+//          git credentialsId: 'git-key', url: 'git@github.com:shubhamghavas/chat-app-sapient.git'
+  
+//             }
+//         }
+        stage ('install tomcat'){
+            steps{
+                ansiblePlaybook credentialsId: 'git-key', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/tomcat.yml'
+            }
+        }
+        stage ('deploy App'){
+            steps{
+                ansiblePlaybook credentialsId: 'git-key', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/deplyapp.yml'
+            }
+        }
+    }
+}
