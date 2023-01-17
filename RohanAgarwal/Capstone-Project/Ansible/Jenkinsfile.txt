@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+    stages {
+        stage('pull the code') {
+            steps {
+               git credentialsId: 'git-token', url: 'git@github.com:rohan010320/springboot-chat-app.git'
+            }
+        }
+        stage('docker build') {
+            steps {
+              script {
+                   sh 'mvn compile jib:dockerBuild'
+                }
+            }
+        }
+        stage('docker push') {
+            steps {
+              script {
+                   // This step should not normally be used in your script. Consult the inline help for details.
+                    withDockerRegistry(credentialsId: 'nexus-cred', url: 'http://172.174.114.128:8085') {
+                        // some block
+                         sh 'mvn compile jib:build -Djib.allowInsecureRegistries=true -DsendCredentialsOverHttp'
+                    
+                    }
+                }
+            }
+        }
+	stage ('ansible'){
+            steps {
+                    ansiblePlaybook credentialsId: 'git-token', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/tomcatInstall.yml'
+  
+            }
+        }
+	stage ('ansible'){
+            steps {
+                    ansiblePlaybook credentialsId: 'git-token', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/docker.yml'
+  
+            }
+        }
+	stage ('ansible'){
+            steps {
+                    ansiblePlaybook credentialsId: 'git-token', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/deploytomcat.yml'
+  
+            }
+        }
+        
+        
+    }
+}

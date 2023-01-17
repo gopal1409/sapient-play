@@ -1,0 +1,52 @@
+pipeline{
+    agent any
+    stages {
+        stage('poll scm'){
+            steps {
+                git credentialsId: 'git-token', url: 'git@github.com:rohan010320/springboot-chat-app.git'
+            }
+        }
+        stage('mvn build'){
+            steps {
+                sh 'mvn -B -DskipTest clean package'
+            }
+        }
+        stage('mvn test'){
+            steps {
+                sh 'mvn test'
+                junit 'target/surefire-reports/*.xml'
+            }
+        }
+        stage('checkstyle'){
+            steps {
+                sh 'mvn checkstyle:checkstyle'
+                recordIssues(tools: [checkStyle(pattern: '\'**/checkstyle-result.xml\'')])
+            }
+        }
+        stage('code coverage'){
+            steps {
+                jacoco()
+            }
+        }
+         stage('sonar'){
+             steps {
+                 sh 'mvn clean verify sonar:sonar \
+   -Dsonar.projectKey=myfirstjob \
+   -Dsonar.host.url=http://20.51.214.112:9000 \
+   -Dsonar.login=sqp_c11329c1d190d071d4c455f618ad82bf029cc377'
+             }
+         }
+        stage('nexus') {
+            steps {
+            script {
+                 pom = readMavenPom file: "pom.xml";
+                filesByGlob = findFiles(glob: "target/*.${pom.packaging}");
+                    echo "${filesByGlob[0].name} ${filesByGlob[0].path} ${filesByGlob[0].directory} ${filesByGlob[0].length} ${filesByGlob[0].lastModified}"
+                    artifactPath = filesByGlob[0].path;
+            }
+            
+               nexusArtifactUploader artifacts: [[artifactId: pom.artifactId, classifier: '', file: artifactPath, type: pom.packaging, type: 'war']], credentialsId: 'nexus-cred', groupId: pom.artifactId, nexusUrl: '172.174.114.128:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-snapshots', version: pom.version
+            }
+        }
+    }
+}
