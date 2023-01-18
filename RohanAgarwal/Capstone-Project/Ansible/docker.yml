@@ -1,0 +1,26 @@
+---
+- hosts: client
+
+  become: true
+  tasks:
+    - name: Login into docker registry in nexus
+      docker_login:
+        registry_url: 172.174.114.128:8085
+        username: admin
+        password: Rohan@123
+        reauthorize: true
+      
+    - name: Pull an image
+      docker_image:
+        name: 172.174.114.128:8085/sapient-chat-app
+        source: pull
+
+    - name: deploy application
+      docker_container:
+        image: 172.174.114.128:8085/sapient-chat-app
+        name: sapient-chat-app
+        state: started
+        auto_remove: true
+        ports:
+          - "8089:80"
+    

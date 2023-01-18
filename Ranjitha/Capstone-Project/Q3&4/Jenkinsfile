@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+    stages {
+        stage ('git integration'){
+            steps {
+                    git credentialsId: 'git-token', url: 'git@github.com:sairanjitha2906/chat-app-sapient.git'
+            }
+        }
+        stage ('installation of docker on the worker using ansible'){
+            steps {
+                    // ansiblePlaybook credentialsId: 'git-token', inventory: 'ansible/dev.in', playbook: 'ansible/tomcat.yml'
+                  ansiblePlaybook credentialsId: 'git-token', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/docker.yml'
+            }
+        }
+      
+         stage ('installation of tomcat on the worker using ansible'){
+            steps {
+                    ansiblePlaybook credentialsId: 'git-token', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/tomcat.yml'
+                }
+        }
+         stage ('Deploy the docker image'){
+            steps {
+                    // ansiblePlaybook credentialsId: 'git-token', inventory: 'ansible/dev.in', playbook: 'ansible/tomcat.yml'
+                  ansiblePlaybook credentialsId: 'git-token', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/docker1.yml'
+            }
+        }
+         stage ('Deploying war into tomcat'){
+            steps {
+                    // ansiblePlaybook credentialsId: 'git-token', inventory: 'ansible/dev.in', playbook: 'ansible/tomcat.yml'
+                  ansiblePlaybook credentialsId: 'git-token', disableHostKeyChecking: true, inventory: 'ansible/dev.inv', playbook: 'ansible/tomcat1.yml'
+            }
+        }
+    }
+}

@@ -1,0 +1,50 @@
+pipeline{
+    agent any
+
+    stages{
+        stage("Poll git"){
+            steps{
+                git branch: 'main', url: 'https://github.com/sairanjitha2906/terraform.git'
+            }
+        }
+         stage("Terraform init"){
+            steps{
+                sh 'terraform init'
+            }
+         }
+         stage("Terraform destroy"){
+            steps{
+                sh 'terraform destroy -auto-approve'
+            }
+         }
+          stage("Clean up"){
+            steps{
+                sh '''
+                    rm IP.txt
+                    rm result.txt
+                '''
+            }
+        }
+        stage('Deploy the resoources') { 
+            steps { 
+                sh ''' 
+                VM_IP=$(terraform apply -auto-approve -no-color | grep "vm_ip"); echo $VM_IP >> IP.txt;
+                ''' 
+            }
+            } 
+            stage('SSH the machine') { 
+                steps { 
+                    script{
+                    sh ''' 
+                    ex_ip=$(grep -E -o "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)" IP.txt >> result.txt) 
+                    export EX_IP=$(cat result.txt) 
+                    ssh -i /var/lib/jenkins/.ssh/id_rsa -o StrictHostKeyChecking=no adminuser@$EX_IP < command.txt 
+                    ''' 
+                    }
+
+                }
+
+            }
+           
+    }
+}

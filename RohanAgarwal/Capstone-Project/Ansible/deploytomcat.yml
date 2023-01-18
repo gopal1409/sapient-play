@@ -1,0 +1,30 @@
+---
+###every yaml start with three dash
+-
+  #target where our play is going to run
+  hosts: client
+
+  vars:
+    - warName: APP.war
+    - warRemotePath: /home/tomcat
+  ##define list of task that we are executing
+
+  tasks:
+    - name: Stop Tomcat  
+      command: /usr/share/tomcat/bin/shutdown.sh
+
+    - name: "Download war file"
+      ansible.builtin.get_url:
+        url: "http://172.174.114.128:8081/repository/maven-snapshots/websocket-demo/websocket-demo/0.0.1-SNAPSHOT/websocket-demo-0.0.1-20230112.120920-10.war"
+        username: admin
+        password: Rohan@123
+        dest: "/usr/share/tomcat/webapps/{{ warName }}"  
+
+    - name: Unzip WAR file
+      unarchive: src=/usr/share/tomcat/webapps/{{ warName }} dest=/usr/share/tomcat/webapps copy=no mode=0755
+ 
+    - name: Start Tomcat  
+      command: /usr/share/tomcat/bin/startup.sh     
+
+        
+      
