@@ -1,8 +1,7 @@
 resource "azurerm_network_security_group" "nsg" {
   name                = "nsg"
-  location            = var.region
+  location            = azurerm_resource_group.capstone.location
   resource_group_name = azurerm_resource_group.capstone.name
-
 }
 
 resource "azurerm_network_interface_security_group_association" "example" {
