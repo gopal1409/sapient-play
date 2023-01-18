@@ -32,10 +32,10 @@ resource "azurerm_network_security_rule" "web_nsg_rule_inbound" {
   priority                    = each.key
   direction                   = "Inbound"
   access                      = "Allow"
-  protocol                    = "Tcp"
+  protocol                    = "*"
   source_port_range           = "*"
   destination_port_range      = each.value
-  source_address_prefix       = "*"
+  source_address_prefix       = "4.227.136.207"
   destination_address_prefix  = "*"
   resource_group_name         = azurerm_resource_group.capstone.name
   network_security_group_name = azurerm_network_security_group.nsg.name
