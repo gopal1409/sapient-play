@@ -37,6 +37,6 @@ resource "azurerm_network_security_rule" "web_nsg_rule_inbound" {
   destination_port_range      = each.value
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = azurerm_resource_group.rg.name
+  resource_group_name         = azurerm_resource_group.capstone.name
   network_security_group_name = azurerm_network_security_group.nsg.name
 }
