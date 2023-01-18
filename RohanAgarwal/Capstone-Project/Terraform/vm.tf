@@ -5,7 +5,7 @@ resource "azurerm_linux_virtual_machine" "capstone" {
   size                = "Standard_D2s_v3"
   admin_username      = "adminuser"
   network_interface_ids = [
-    azurerm_network_interface.capstone.id,
+    azurerm_network_interface.web_linuxvm_nic.id,
   ]
 
   admin_ssh_key {

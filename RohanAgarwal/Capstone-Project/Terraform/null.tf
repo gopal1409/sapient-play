@@ -1,12 +1,12 @@
 resource "null_resource" "null_copy_ssh_key" {
     
     depends_on = [
-    azurerm_linux_virtual_machine.example
+    azurerm_linux_virtual_machine.capstone
   ]
     
   connection {
     type = "ssh"
-    host = azurerm_linux_virtual_machine.capstonr.public_ip_address
+    host = azurerm_linux_virtual_machine.capstone.public_ip_address
     user = "adminuser"
     private_key = file("~/.ssh/id_rsa")
   }
