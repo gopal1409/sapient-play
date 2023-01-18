@@ -1,0 +1,26 @@
+---
+- name: Deploy Docker Image From Nexus 
+  hosts: all
+  tasks:
+   - name: Login to Private Registry 
+     docker_login:
+       registry: 170.187.252.6:8085
+       username: admin
+       password: Shubham@2000
+       reauthorize: yes
+   - name: Running Docker Conatiner
+     docker_container:
+        name: chat-app
+        image: 170.187.252.6:8085/chat-app
+        state: started
+        pull: true
+        ports:
+        - "8082:8080"
+   - name: Connect to app Server on port 8082 and check status
+     tags: test
+     uri:
+       url: http://localhost:8082
+     register: result
+     until: "result.status ==200"
+     retries: 5
+     delay: 10   

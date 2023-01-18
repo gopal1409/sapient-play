@@ -1,0 +1,3 @@
+sudo helm repo add nginx-stable https://helm.nginx.com/stable
+sudo helm repo update
+sudo helm install nginx-w-istio nginx-stable/nginx-ingress

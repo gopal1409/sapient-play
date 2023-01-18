@@ -1,0 +1,2 @@
+sudo kubectl get deploy
+sudo kubectl describe pods

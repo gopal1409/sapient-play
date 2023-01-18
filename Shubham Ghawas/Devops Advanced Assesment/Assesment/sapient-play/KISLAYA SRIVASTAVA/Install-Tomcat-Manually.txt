@@ -1,0 +1,97 @@
+1. Create new user
+  sudo useradd -m -d /opt/tomcat -U -s /bin/false tomcat
+
+2. Update the package manager
+  sudo apt update
+
+3. Install the JDK
+  sudo apt install default-jdk
+
+4. Check the version of the Java installation
+  java -version
+
+5. Navigate to the /tmp directory and download the tomcat archive
+  cd /tmp 
+  wget https://dlcdn.apache.org/tomcat/tomcat-10/v10.0.27/bin/apache-tomcat-10.0.27.tar.gz
+
+6. Extract the archive
+  sudo tar xzvf apache-tomcat-10*tar.gz -C /opt/tomcat --strip-components=1
+
+7. Grant tomcat ownership over the extracted installation
+  sudo chown -R tomcat:tomcat /opt/tomcat/
+  sudo chmod -R u+x /opt/tomcat/bin
+
+8. Open the file /opt/tomcat/conf/tomcat-users.xml and edit it 
+  sudo nano /opt/tomcat/conf/tomcat-users.xml
+
+9. Add the lines in /opt/tomcat/conf/tomcat-users.xml file
+    <role rolename="manager-gui" />
+    <user username="manager" password="manager_password" roles="manager-gui" />
+    <role rolename="admin-gui" />
+    <user username="admin" password="admin_password" roles="manager-gui,admin-gui" />
+
+10. To remove the restriction for the Manager page, open its config file
+  sudo nano /opt/tomcat/webapps/manager/META-INF/context.xml
+
+11. Comment out the Valve definition
+    ...
+    <Context antiResourceLocking="false" privileged="true" >
+      <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor"
+                      sameSiteCookies="strict" />
+    <!--  <Valve className="org.apache.catalina.valves.RemoteAddrValve"
+            allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" /> -->
+      <Manager sessionAttributeValueClassNameFilter="java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.filters\.Csr>
+    </Context>
+
+12. To remove the restriction for the Host Manager page, open its config file
+  sudo nano /opt/tomcat/webapps/host-manager/META-INF/context.xml
+
+13. Comment out the Valve definition
+    ...
+    <Context antiResourceLocking="false" privileged="true" >
+      <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor"
+                      sameSiteCookies="strict" />
+    <!--  <Valve className="org.apache.catalina.valves.RemoteAddrValve"
+            allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" /> -->
+      <Manager sessionAttributeValueClassNameFilter="java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.filters\.Csr>
+    </Context>
+
+14. Create the tomcat.service file in /etc/systemd/system/tomcat.service
+  sudo nano /etc/systemd/system/tomcat.service
+
+15. Add follwoing to the file 
+    [Unit]
+    Description=Tomcat
+    After=network.target
+    [Service]
+    Type=forking
+    User=tomcat
+    Group=tomcat
+    Environment="JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-amd64"
+    Environment="JAVA_OPTS=-Djava.security.egd=file:///dev/urandom"
+    Environment="CATALINA_BASE=/opt/tomcat"
+    Environment="CATALINA_HOME=/opt/tomcat"
+    Environment="CATALINA_PID=/opt/tomcat/temp/tomcat.pid"
+    Environment="CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC"
+    ExecStart=/opt/tomcat/bin/startup.sh
+    ExecStop=/opt/tomcat/bin/shutdown.sh
+    RestartSec=10
+    Restart=always
+    [Install]
+    WantedBy=multi-user.target
+
+16. Reload the systemd daemon 
+  sudo systemctl daemon-reload
+
+17. Start the Tomcat service
+  sudo systemctl start tomcat
+
+18. Check status to confirm that it started successfully
+  sudo systemctl status tomcat
+
+19. Enable Tomcat starting up with the system
+  sudo systemctl enable tomcat 
+
+20. Run the following command to allow traffic to 8080 port
+  sudo ufw allow 8080
+
