@@ -1,7 +1,7 @@
 resource "azurerm_kubernetes_cluster" "capstone" {
   name                = "capstone-aks1"
-  location            = azurerm_resource_group.capstone.location
-  resource_group_name = azurerm_resource_group.capstone.name
+  location            = "eastus"
+  resource_group_name = "capstone-resources"
   dns_prefix          = "capstoneaks1"
 
   default_node_pool {
