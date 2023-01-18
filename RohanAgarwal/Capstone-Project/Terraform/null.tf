@@ -6,7 +6,7 @@ resource "null_resource" "null_copy_ssh_key" {
     
   connection {
     type = "ssh"
-    host = azurerm_linux_virtual_machine.example.public_ip_address
+    host = azurerm_linux_virtual_machine.capstonr.public_ip_address
     user = "adminuser"
     private_key = file("~/.ssh/id_rsa")
   }
